@@ -98,7 +98,7 @@ RUN \
 	&& git init \
 	&& git remote add origin https://github.com/openresty/headers-more-nginx-module \
 	&& git fetch --depth 1 origin
-	&& git checkout --recurse-submodules -q FETCH_HEAD
+	&& git checkout --recurse-submodules -q FETCH_HEAD \
 	&& cd .. \
 	&& git submodule update --init --depth 1 \
 	&& curl -fSL https://nginx.org/download/nginx-$NGINX_VERSION.tar.gz -o nginx.tar.gz \
