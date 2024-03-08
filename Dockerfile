@@ -46,6 +46,7 @@ ARG CONFIG="\
 		--with-file-aio \
 		--with-http_v2_module \
 		--add-module=/usr/src/ngx_brotli \
+		--add-module=/usr/src/ngx_headers_more \
 	"
 
 FROM alpine:$ALPINE_VERSION
@@ -92,7 +93,14 @@ RUN \
 	&& git fetch --depth 1 origin $NGX_BROTLI_COMMIT \
 	&& git checkout --recurse-submodules -q FETCH_HEAD \
 	&& git submodule update --init --depth 1 \
+	&& mkdir -p /usr/src/ngx_headers_more \
+	&& cd /usr/src/ngx_headers_more \
+	&& git init \
+	&& git remote add origin https://github.com/openresty/headers-more-nginx-module \
+	&& git fetch --depth 1 origin
+	&& git checkout --recurse-submodules -q FETCH_HEAD
 	&& cd .. \
+	&& git submodule update --init --depth 1 \
 	&& curl -fSL https://nginx.org/download/nginx-$NGINX_VERSION.tar.gz -o nginx.tar.gz \
 	&& curl -fSL https://nginx.org/download/nginx-$NGINX_VERSION.tar.gz.asc  -o nginx.tar.gz.asc \
         && sha512sum nginx.tar.gz nginx.tar.gz.asc \
