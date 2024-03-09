@@ -1,6 +1,7 @@
 ARG ALPINE_VERSION=3.17.3
 ARG NGINX_VERSION=1.24.0
 ARG NGX_BROTLI_COMMIT=6e975bcb015f62e1f303054897783355e2a877dc
+ARG NGX_HEADERS_MORE_COMMIT=06dc0be56e5ec9f7fd814e881b066b5540a85bec
 ARG CONFIG="\
 		--prefix=/etc/nginx \
 		--sbin-path=/usr/sbin/nginx \
@@ -45,8 +46,8 @@ ARG CONFIG="\
 		--with-compat \
 		--with-file-aio \
 		--with-http_v2_module \
-		--add-module=/usr/src/ngx_brotli \
-		--add-module=/usr/src/ngx_headers_more \
+		--add-dynamic-module=/usr/src/ngx_brotli \
+		--add-dynamic-module=/usr/src/ngx_headers_more \
 	"
 
 FROM alpine:$ALPINE_VERSION
@@ -93,14 +94,7 @@ RUN \
 	&& git fetch --depth 1 origin $NGX_BROTLI_COMMIT \
 	&& git checkout --recurse-submodules -q FETCH_HEAD \
 	&& git submodule update --init --depth 1 \
-	&& mkdir -p /usr/src/ngx_headers_more \
-	&& cd /usr/src/ngx_headers_more \
-	&& git init \
-	&& git remote add origin https://github.com/openresty/headers-more-nginx-module \
-	&& git fetch --depth 1 origin
-	&& git checkout --recurse-submodules -q FETCH_HEAD \
 	&& cd .. \
-	&& git submodule update --init --depth 1 \
 	&& curl -fSL https://nginx.org/download/nginx-$NGINX_VERSION.tar.gz -o nginx.tar.gz \
 	&& curl -fSL https://nginx.org/download/nginx-$NGINX_VERSION.tar.gz.asc  -o nginx.tar.gz.asc \
         && sha512sum nginx.tar.gz nginx.tar.gz.asc \
@@ -109,6 +103,15 @@ RUN \
 	&& gpg --batch --verify nginx.tar.gz.asc nginx.tar.gz \
 	&& mkdir -p /usr/src \
 	&& tar -zxC /usr/src -f nginx.tar.gz
+
+RUN \
+	mkdir -p /usr/src/ngx_headers_more \
+	&& cd /usr/src/ngx_headers_more \
+	&& git init \
+	&& git remote add origin https://github.com/openresty/headers-more-nginx-module \
+	&& git fetch --depth 1 origin $NGX_HEADERS_MORE_COMMIT \
+	&& git checkout --recurse-submodules -q FETCH_HEAD \
+	&& git submodule update --init --depth 1
 
 RUN \
 	cd /usr/src/nginx-$NGINX_VERSION \
@@ -135,6 +138,9 @@ RUN \
 	&& install -m755 objs/ngx_http_image_filter_module-debug.so /usr/lib/nginx/modules/ngx_http_image_filter_module-debug.so \
 	&& install -m755 objs/ngx_http_geoip_module-debug.so /usr/lib/nginx/modules/ngx_http_geoip_module-debug.so \
 	&& install -m755 objs/ngx_stream_geoip_module-debug.so /usr/lib/nginx/modules/ngx_stream_geoip_module-debug.so \
+	&& install -m755 objs/ngx_http_headers_more_filter_module.so /usr/lib/nginx/modules/ngx_http_headers_more_filter_module.so \
+	&& install -m755 objs/ngx_http_brotli_filter_module.so /usr/lib/nginx/modules/ngx_http_brotli_filter_module.so \
+	&& install -m755 objs/ngx_http_brotli_static_module.so /usr/lib/nginx/modules/ngx_http_brotli_static_module.so \
 	&& strip /usr/sbin/nginx* \
 	&& strip /usr/lib/nginx/modules/*.so \
 	\
